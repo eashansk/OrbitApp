@@ -1,24 +1,23 @@
-// app/index.tsx
+// app/communities.tsx
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 
-const dummyContacts = [
-  { id: '1', name: 'Jane Doe', description: 'Friend from college', birthday: 'May 15' },
-  { id: '2', name: 'John Smith', description: 'Family friend', birthday: 'August 9' },
+const dummyCommunities = [
+  { id: '1', name: 'Tech Enthusiasts', description: 'Community for tech lovers' },
+  { id: '2', name: 'Writers Hub', description: 'Connect with fellow writers' },
 ];
 
-export default function FriendsFamilyScreen() {
+export default function CommunitiesEventsScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Friends & Family</Text>
+      <Text style={styles.header}>Communities & Events</Text>
       <FlatList
-        data={dummyContacts}
+        data={dummyCommunities}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{item.name}</Text>
             <Text>{item.description}</Text>
-            <Text>Birthday: {item.birthday}</Text>
           </View>
         )}
       />

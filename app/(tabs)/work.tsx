@@ -1,18 +1,18 @@
-// app/index.tsx
+// app/work.tsx
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 
-const dummyContacts = [
-  { id: '1', name: 'Jane Doe', description: 'Friend from college', birthday: 'May 15' },
-  { id: '2', name: 'John Smith', description: 'Family friend', birthday: 'August 9' },
+const dummyWorkContacts = [
+  { id: '1', name: 'Alice Johnson', description: 'Coworker', birthday: 'April 12' },
+  { id: '2', name: 'Bob Williams', description: 'Former manager', birthday: 'October 22' },
 ];
 
-export default function FriendsFamilyScreen() {
+export default function WorkBusinessScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Friends & Family</Text>
+      <Text style={styles.header}>Work & Business</Text>
       <FlatList
-        data={dummyContacts}
+        data={dummyWorkContacts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
