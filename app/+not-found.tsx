@@ -1,40 +1,53 @@
-import { Link, Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
+// app/_layout.tsx
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import { Text, View } from '@/components/Themed';
-
-export default function NotFoundScreen() {
+export default function Layout() {
   return (
-    <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <View style={styles.container}>
-        <Text style={styles.title}>This screen doesn't exist.</Text>
+    <Tabs screenOptions={{ headerShown: false }}>
+      {/* Home Tab – should match file (tabs)/Index.tsx exactly */}
+      <Tabs.Screen
+        name="(tabs)/Index" 
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
 
-        <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Go to home screen!</Text>
-        </Link>
-      </View>
-    </>
+      {/* Events Tab – matches (tabs)/Events.tsx */}
+      <Tabs.Screen
+        name="(tabs)/Events"
+        options={{
+          tabBarLabel: 'Events',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* Chat Tab – matches (tabs)/chat.tsx */}
+      <Tabs.Screen
+        name="(tabs)/chat"
+        options={{
+          tabBarLabel: 'Chat',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* Profile Tab – matches (tabs)/Profile.tsx */}
+      <Tabs.Screen
+        name="(tabs)/Profile"
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-  linkText: {
-    fontSize: 14,
-    color: '#2e78b7',
-  },
-});
