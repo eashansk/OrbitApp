@@ -1,123 +1,139 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { colors, spacing, typography, borderRadius } from '../constants/theme';
 
-interface ChatItem {
+interface Chat {
   id: string;
   name: string;
   lastMessage: string;
-  time: string;
+  timestamp: string;
+  unreadCount?: number;
+  imageId?: string;
 }
 
-const SAMPLE_CHATS: ChatItem[] = [
-  {
-    id: '1',
-    name: 'Sarah from Marketing',
-    lastMessage: 'Thanks for the update!',
-    time: '2h ago',
-  },
-  {
-    id: '2',
-    name: 'Team Project',
-    lastMessage: 'Meeting tomorrow at 10 AM',
-    time: '3h ago',
-  },
-];
-
 export default function ChatScreen() {
-  const renderChatItem = ({ item }: { item: ChatItem }) => (
+  const [chats, setChats] = useState<Chat[]>([
+    {
+      id: '1',
+      name: 'John Doe',
+      lastMessage: 'Hey, how are you?',
+      timestamp: '10:30 AM',
+      unreadCount: 2,
+      imageId: '1',
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      lastMessage: 'Meeting at 2 PM',
+      timestamp: 'Yesterday',
+      imageId: '2',
+    },
+  ]);
+
+  const renderChat = ({ item }: { item: Chat }) => (
     <TouchableOpacity style={styles.chatItem}>
-      <View style={styles.chatAvatar}>
-        <Text style={styles.avatarText}>{item.name[0]}</Text>
+      <View style={styles.avatarContainer}>
+        <Image
+          source={{ uri: `https://i.pravatar.cc/150?img=${item.imageId}` }}
+          style={styles.avatar}
+        />
       </View>
       <View style={styles.chatContent}>
-        <Text style={styles.chatName}>{item.name}</Text>
-        <Text style={styles.lastMessage}>{item.lastMessage}</Text>
+        <View style={styles.chatHeader}>
+          <Text style={styles.chatName}>{item.name}</Text>
+          <Text style={styles.timestamp}>{item.timestamp}</Text>
+        </View>
+        <View style={styles.chatFooter}>
+          <Text style={styles.lastMessage} numberOfLines={1}>
+            {item.lastMessage}
+          </Text>
+          {item.unreadCount && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+            </View>
+          )}
+        </View>
       </View>
-      <Text style={styles.timeText}>{item.time}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Chat</Text>
-        <TouchableOpacity style={styles.addButton}>
-          <Ionicons name="add" size={24} color="#4A90E2" />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
       <FlatList
-        data={SAMPLE_CHATS}
-        renderItem={renderChatItem}
+        data={chats}
+        renderItem={renderChat}
         keyExtractor={(item) => item.id}
-        style={styles.chatList}
+        contentContainerStyle={styles.listContent}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-  },
-  addButton: {
-    padding: 8,
-  },
-  chatList: {
-    flex: 1,
+  listContent: {
+    padding: spacing.md,
   },
   chatItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    padding: spacing.md,
+    backgroundColor: colors.card.background,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    ...colors.card.shadow,
   },
-  chatAvatar: {
+  avatarContainer: {
+    marginRight: spacing.md,
+  },
+  avatar: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#666',
+    borderRadius: borderRadius.full,
   },
   chatContent: {
     flex: 1,
-    marginLeft: 12,
+  },
+  chatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   chatName: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.primary,
+  },
+  timestamp: {
+    ...typography.caption,
+    color: colors.text.secondary,
+  },
+  chatFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   lastMessage: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+    ...typography.body,
+    color: colors.text.secondary,
+    flex: 1,
+    marginRight: spacing.sm,
   },
-  timeText: {
-    fontSize: 12,
-    color: '#999',
+  unreadBadge: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xs,
+  },
+  unreadCount: {
+    ...typography.caption,
+    color: colors.background,
+    fontWeight: '600',
   },
 }); 

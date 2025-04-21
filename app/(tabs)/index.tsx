@@ -7,10 +7,16 @@ import {
   FlatList,
   TouchableOpacity,
   ScrollView,
+  Alert,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { storeImage, getStoredImage } from '../utils/imageStorage';
+import { colors, spacing, typography, borderRadius } from '../constants/theme';
 
 // Types
 interface Category {
@@ -21,7 +27,7 @@ interface Category {
 interface PriorityConnection {
   id: string;
   name: string;
-  image: string | null;
+  imageId?: string;
   status?: 'online' | 'offline';
   category: string;
 }
@@ -53,12 +59,12 @@ const CATEGORIES: Category[] = [
 ];
 
 const PRIORITY_CONNECTIONS: PriorityConnection[] = [
-  { id: '1', name: 'Dad', image: null, status: 'online', category: 'Family' },
-  { id: '2', name: 'Mom', image: null, status: 'online', category: 'Family' },
-  { id: '3', name: 'Boss', image: null, category: 'Work' },
-  { id: '4', name: 'John', image: null, category: 'Friends' },
-  { id: '5', name: 'Sarah', image: null, category: 'Work' },
-  { id: '6', name: 'Mike', image: null, category: 'Networking' },
+  { id: '1', name: 'Dad', imageId: undefined, status: 'online', category: 'Family' },
+  { id: '2', name: 'Mom', imageId: undefined, status: 'online', category: 'Family' },
+  { id: '3', name: 'Boss', imageId: undefined, category: 'Work' },
+  { id: '4', name: 'John', imageId: undefined, category: 'Friends' },
+  { id: '5', name: 'Sarah', imageId: undefined, category: 'Work' },
+  { id: '6', name: 'Mike', imageId: undefined, category: 'Networking' },
 ];
 
 const ACTIVITY_DATA: Activity[] = [
@@ -132,39 +138,55 @@ export default function HomeScreen() {
     );
   }, [activeFilter]);
 
-  const pickImage = async (connectionId?: string) => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permissionResult.status !== 'granted') {
-      alert('Permission to access media library is required!');
-      return;
-    }
+  const pickImage = async (connectionId: string) => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert(
+          'Permission Required',
+          'Please allow access to your photo library to change the connection picture.'
+        );
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      quality: 1,
-      aspect: [1, 1],
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      console.log('Image selected:', result.assets[0].uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const storedImageResult = await storeImage(connectionId, result.assets[0].uri);
+        // Update the connection's image in your data store
+        // This is where you would typically update your backend or local storage
+        console.log('Stored image for connection:', connectionId, storedImageResult);
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'There was an error selecting the image. Please try again.'
+      );
+      console.error('Error picking image:', error);
     }
   };
 
-  const renderCategory = ({ item }: { item: Category }) => (
+  const renderCategory = (category: Category) => (
     <TouchableOpacity
+      key={category.id}
       style={[
-        styles.categoryButton,
-        activeFilter === item.label && styles.categoryButtonActive,
+        styles.filterButton,
+        activeFilter === category.label && styles.filterButtonActive,
       ]}
-      onPress={() => setActiveFilter(item.label)}
+      onPress={() => setActiveFilter(category.label)}
     >
       <Text
         style={[
-          styles.categoryText,
-          activeFilter === item.label && styles.categoryTextActive,
+          styles.filterText,
+          activeFilter === category.label && styles.filterTextActive,
         ]}
       >
-        {item.label}
+        {category.label}
       </Text>
     </TouchableOpacity>
   );
@@ -175,10 +197,13 @@ export default function HomeScreen() {
       onPress={() => pickImage(item.id)}
     >
       <View style={styles.avatarContainer}>
-        {item.image ? (
-          <Image source={{ uri: item.image }} style={styles.avatar} />
+        {item.imageId ? (
+          <Image 
+            source={{ uri: item.imageId }} 
+            style={styles.avatar} 
+          />
         ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>{item.name[0]}</Text>
           </View>
         )}
@@ -191,7 +216,7 @@ export default function HomeScreen() {
   const renderActivity = ({ item }: { item: Activity }) => (
     <View style={styles.activityCard}>
       <View style={styles.activityHeader}>
-        <View style={[styles.activityAvatar, styles.avatarPlaceholder]}>
+        <View style={styles.avatarPlaceholder}>
           <Text style={styles.avatarText}>{item.title[0]}</Text>
         </View>
         <View style={styles.activityContent}>
@@ -230,23 +255,24 @@ export default function HomeScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.filterContainer}
+        contentContainerStyle={styles.filterContent}
       >
-        {filters.map((filter) => (
+        {CATEGORIES.map((category, index) => (
           <TouchableOpacity
-            key={filter}
-            onPress={() => setActiveFilter(filter)}
+            key={category.id}
             style={[
               styles.filterButton,
-              activeFilter === filter && styles.filterButtonActive,
+              activeFilter === category.label && styles.filterButtonActive,
             ]}
+            onPress={() => setActiveFilter(category.label)}
           >
             <Text
               style={[
                 styles.filterText,
-                activeFilter === filter && styles.filterTextActive,
+                activeFilter === category.label && styles.filterTextActive,
               ]}
             >
-              {filter}
+              {category.label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -262,7 +288,7 @@ export default function HomeScreen() {
               renderItem={renderPriorityConnection}
               keyExtractor={(item) => item.id}
               showsHorizontalScrollIndicator={false}
-              style={styles.connectionsList}
+              contentContainerStyle={styles.connectionsList}
             />
           </>
         )}
@@ -287,7 +313,7 @@ export default function HomeScreen() {
               renderItem={renderEvent}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
-              style={styles.eventsList}
+              contentContainerStyle={styles.eventsList}
             />
           </>
         )}
@@ -299,181 +325,179 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
+    backgroundColor: colors.background,
+  } as ViewStyle,
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+    borderBottomColor: colors.border,
     alignItems: 'center',
-  },
+  } as ViewStyle,
   logo: {
     width: 100,
     height: 40,
-  },
+  } as ImageStyle,
   filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+    borderBottomColor: colors.border,
+  },
+  filterContent: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 4,
-    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginHorizontal: spacing.xs,
+    borderRadius: borderRadius.full,
     backgroundColor: '#f0f0f0',
-  },
+  } as ViewStyle,
   filterButtonActive: {
-    backgroundColor: '#4A90E2',
-  },
+    backgroundColor: colors.primary,
+  } as ViewStyle,
   filterText: {
-    fontSize: 14,
-    color: '#666',
-  },
+    ...typography.caption,
+    color: colors.text.secondary,
+  } as TextStyle,
   filterTextActive: {
-    color: '#fff',
-  },
+    color: colors.background,
+  } as TextStyle,
   content: {
     flex: 1,
-  },
+  } as ViewStyle,
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    paddingHorizontal: 16,
-    marginTop: 24,
-    marginBottom: 12,
-  },
+    ...typography.h3,
+    color: colors.text.primary,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.md,
+  } as TextStyle,
   connectionsList: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
-  },
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xxl,
+  } as ViewStyle,
   connectionItem: {
     alignItems: 'center',
-    marginRight: 24,
-  },
+    marginRight: spacing.xxl,
+  } as ViewStyle,
   avatarContainer: {
     position: 'relative',
-  },
-  avatar: {
     width: 60,
     height: 60,
-    borderRadius: 30,
-  },
+  } as ViewStyle,
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: borderRadius.full,
+  } as ImageStyle,
   avatarPlaceholder: {
+    width: '100%',
+    height: '100%',
     backgroundColor: '#E1E1E1',
     justifyContent: 'center',
     alignItems: 'center',
-  },
+    borderRadius: borderRadius.full,
+  } as ViewStyle,
   avatarText: {
-    fontSize: 24,
-    color: '#666',
-  },
+    ...typography.h2,
+    color: colors.text.secondary,
+  } as TextStyle,
   onlineIndicator: {
     position: 'absolute',
     right: 0,
     bottom: 0,
     width: 12,
     height: 12,
-    borderRadius: 6,
-    backgroundColor: '#4CAF50',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.status.online,
     borderWidth: 2,
-    borderColor: '#fff',
-  },
+    borderColor: colors.background,
+  } as ViewStyle,
   connectionName: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#333',
-  },
+    marginTop: spacing.xs,
+    ...typography.caption,
+    color: colors.text.primary,
+  } as TextStyle,
   activityCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: colors.card.background,
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    shadowColor: colors.card.shadow.color,
+    shadowOffset: colors.card.shadow.offset,
+    shadowOpacity: colors.card.shadow.opacity,
+    shadowRadius: colors.card.shadow.radius,
     elevation: 2,
-  },
+  } as ViewStyle,
   activityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  activityAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
+  } as ViewStyle,
   activityContent: {
     flex: 1,
-  },
+  } as ViewStyle,
   activityTitle: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#333',
-  },
+    color: colors.text.primary,
+  } as TextStyle,
   activityDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  } as TextStyle,
   timestamp: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 8,
-  },
+    ...typography.small,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
+  } as TextStyle,
   eventCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 12,
+    backgroundColor: colors.card.background,
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowColor: colors.card.shadow.color,
+    shadowOffset: colors.card.shadow.offset,
+    shadowOpacity: colors.card.shadow.opacity,
+    shadowRadius: colors.card.shadow.radius,
     elevation: 2,
-  },
+  } as ViewStyle,
   eventDate: {
     width: 50,
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: spacing.lg,
     backgroundColor: '#F0F7FF',
-    borderRadius: 8,
-    padding: 8,
-  },
+    borderRadius: borderRadius.md,
+    padding: spacing.xs,
+  } as ViewStyle,
   eventDay: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#4A90E2',
-  },
+    ...typography.h2,
+    color: colors.primary,
+  } as TextStyle,
   eventMonth: {
-    fontSize: 12,
-    color: '#4A90E2',
+    ...typography.caption,
+    color: colors.primary,
     fontWeight: '500',
-  },
+  } as TextStyle,
   eventContent: {
     flex: 1,
-  },
+  } as ViewStyle,
   eventTitle: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#333',
-  },
+    color: colors.text.primary,
+  } as TextStyle,
   eventType: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  } as TextStyle,
   eventsList: {
-    paddingBottom: 24,
-  },
+    paddingBottom: spacing.xxl,
+  } as ViewStyle,
 });
